@@ -1,0 +1,23 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== Virtual Env =====
+venv/
+.venv/
+
+# ===== Data / Artifacts =====
+RAW_ZIP/
+*.zip
+*.csv
+
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===== Local scripts =====
+activate_venv.bat
