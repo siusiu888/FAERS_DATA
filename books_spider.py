@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from urllib3 import response
 import csv
 import time
+import os
 
 
 # ----------得到请求头----------
@@ -57,25 +58,65 @@ def fetch_perpages_books (soup):
             "page_no": page_no,}
 
         )
-    return rows
+    return rows#每一页的书籍信息
 
+def save_failed_page(failed_page,filename= "failed_page.txt"):
+    if not failed_page:
+        return
+    with open (filename,"w",encoding="utf-8") as f:
+        for url in failed_page:
+            f.write(url+"\n")
+
+def load_failed_pages(filename="failed_page.txt"):
+    if not os.path.exists(filename):
+        # 如果文件不存在，直接返回一个空列表
+        return[]
+
+    # 2. 如果文件存在，则打开并读取它
+    with open(filename,"r",encoding="utf-8")as f:
+        return[line.strip() for line in f if line.strip()]
+    #for line in f:
+    #检查这一行是否为空行,line.strip() 会移除换行符，如果移除后变成了空字符串，说明它原本就是个空行
+    #     if line.strip():  # 如果不是空行,处理这一行（去除首尾空白），并添加到列表中
+        #     clean_line = line.strip()
+        #     result_list.append(clean_line)
+    # return result_list
 
 #------------调度层------------
-def fetch_pages(target_page):
-    all_rows=[]
+def fetch_pages(target_page,resume_urls=None):
+    all_rows=[]#20页的书籍信息
     failed_page = []
-    for page in range(1,target_page+1):
-        if page == 1:
-            page_url = url
-        else:
-            page_url = f"https://books.toscrape.com/catalogue/page-{page}.html"
+    seen_urls=set()
+    if resume_urls:#判断这个列表是不是空的，空的就是False,有内容的就是Ture
+        page_urls = resume_urls
+    else:
+        page_urls =[]
+        for page in range(1,target_page+1):
+            if page == 1:
+                    page_urls.append(url)
+            else:
+                page_urls.append(
+                    f"https://books.toscrape.com/catalogue/page-{page}.html"
+                )
+
+    for page_url in page_urls:
         page_text = fetch_url(page_url)
-    # 在“调用方”，判断返回值是否为 None    
+            # 在“调用方”，判断返回值是否为 None    
         if page_text is None:
             failed_page.append(page_url)
             continue
+        
         page_books =fetch_perpages_books(page_text)
-        all_rows.extend(page_books)
+            #进行去重
+        for book in page_books:
+            product_url = book["product_url"]
+            if product_url in seen_urls:
+                continue
+            else:
+                seen_urls.add(product_url)
+                all_rows.append(book)
+        
+        
     return all_rows ,failed_page
 
 def csv_save(all_rows):
@@ -108,10 +149,21 @@ def summary(target_page,all_rows,failed_page):
      print("输出文件：BOOK_DATA.csv")
      print("====================\n")
 
-
 if __name__ == "__main__":
     target_page = 20
     url = "https://books.toscrape.com"
-    all_rows , failed_page = fetch_pages(target_page)
+
+    failed_urls = load_failed_pages()
+
+    if failed_urls:
+        print("检测到失败页面，开始断点续传...")
+        all_rows, failed_page = fetch_pages(
+            target_page, resume_urls=failed_urls
+        )
+    else:
+        all_rows, failed_page = fetch_pages(target_page)
+
     csv_save(all_rows)
-    summary(target_page, all_rows,failed_page)
+    summary(target_page, all_rows, failed_page)
+
+    save_failed_page(failed_page)
