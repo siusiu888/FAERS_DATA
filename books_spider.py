@@ -8,6 +8,7 @@ from urllib3 import response
 import csv
 import time
 import os
+from urllib3.util.retry import Retry
 
 
 # ----------得到请求头----------
