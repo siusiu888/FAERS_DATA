@@ -13,6 +13,22 @@ venv.cmd
 RAW_ZIP/
 *.zip
 *.csv
+UNZIP_DATA/
+CSV_DATA/
+
+# Generated datasets
+*.csv
+*.parquet
+*.feather
+*.pkl
+*.duckdb
+*.sqlite
+
+# Logs
+LOGS/
+*.log
+
+
 
 # ===== OS / Editor =====
 .DS_Store
